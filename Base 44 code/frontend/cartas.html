@@ -1,0 +1,891 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RPG Card Creator</title>
+    <!-- Chart.js para el gráfico de radar tipo RPG -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- ColorThief para Auto-Theming a partir de la imagen -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/color-thief/2.3.0/color-thief.umd.js"></script>
+    <!-- Referencia al nuevo CSS separado -->
+    <link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+
+    <!-- ==================== MENÚ PRINCIPAL ==================== -->
+    <div id="menu-view">
+        <header>
+            <h1>Character Selection</h1>
+            <div style="display: flex; gap: 10px;">
+                <button class="btn" onclick="createNewCharacter()">+ Add Character</button>
+            </div>
+        </header>
+
+        <div class="characters-grid" id="characters-grid">
+            <!-- Las tarjetas de personajes se generarán aquí con JavaScript -->
+        </div>
+    </div>
+
+
+    <!-- ==================== VISTA DEL EDITOR ==================== -->
+    <div id="editor-view">
+        <!-- Elementos inmersivos (Viñeta y Partículas) -->
+        <div class="vignette"></div>
+        <div class="particles-container" id="particles-container"></div>
+
+        <!-- Header superior del editor para salir o guardar -->
+        <div class="editor-header">
+            <button class="btn" onclick="saveAndExit()">⬅ Save & Exit to Menu</button>
+            <span style="color: var(--text-muted); font-size: 0.9em;">Editing Character Sheet (Auto-saving)</span>
+            <div style="margin-left: auto; display: flex; gap: 10px;">
+                <button class="btn" onclick="toggleFocusMode()">👁 Focus Mode</button>
+            </div>
+        </div>
+
+        <div class="editor-container">
+
+            <!-- PANEL DEL USUARIO (EDITOR) -->
+            <div class="editor-panel" id="editor-panel">
+
+                <!-- ACORDEÓN HEADER -->
+                <h2 class="accordion-header" onclick="toggleAccordion('general-info-content', this)">
+                    General Info
+                    <span class="accordion-icon">▼</span>
+                </h2>
+
+                <!-- ACORDEÓN CONTENIDO -->
+                <div id="general-info-content" class="accordion-content">
+                    <div class="form-group">
+                        <label>Image URL</label>
+                        <input type="text" id="input-img-url" oninput="handleImageUrl(this.value)"
+                            placeholder="https://...">
+                    </div>
+
+                    <div class="form-group" id="local-drop-zone"
+                        style="padding: 10px; border: 1px dashed var(--border-color); border-radius: 4px; background: #0a0c0f; transition: border-color 0.2s;">
+                        <label>Drag & Drop Local Photo (o clic para subir)</label>
+                        <input type="file" id="input-img-local" accept="image/*" onchange="handleLocalImage(this)"
+                            style="background: transparent; border: none; padding: 0;">
+                        <small style="color: var(--text-muted); font-size: 0.7rem; display: block; margin-top: 5px;">*
+                            Max 2MB. Si se sube foto local, anulará la URL.</small>
+                    </div>
+
+                    <div class="form-group" style="display: flex; flex-direction: column; gap: 5px;">
+                        <label>Theme Color (Auto/Manual)</label>
+                        <div style="display: flex; gap: 10px;">
+                            <input type="color" id="input-color" oninput="updateThemeColor(this.value, true, true)" style="flex: 1;">
+                            <button class="btn" onclick="forceColorDetection()" style="font-size: 0.7em;">Auto-Detect</button>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Character Name</label>
+                        <input type="text" id="input-name" oninput="updateCurrentCharacter('name', this.value)">
+                    </div>
+
+                    <div class="form-group" style="display: flex; gap: 10px;">
+                        <div style="flex: 1;">
+                            <label>Level</label>
+                            <input type="number" id="input-lvl" min="1" max="100"
+                                oninput="updateCurrentCharacter('level', this.value)">
+                        </div>
+                        <div style="flex: 1;">
+                            <label>Tier (Metal Frame)</label>
+                            <select id="input-tier" onchange="updateTierSelection(this.value)">
+                                <option value="Acero">Acero (Gris)</option>
+                                <option value="Bronce">Bronce (Cobre)</option>
+                                <option value="Plata">Plata (Fluido)</option>
+                                <option value="Oro">Oro (Brillante)</option>
+                                <option value="Diamante">Diamante (Cristalino)</option>
+                                <option value="Mitico">Mítico (Volcánico)</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Context / Lore</label>
+                        <textarea id="input-context" rows="4"
+                            oninput="updateCurrentCharacter('context', this.value)"></textarea>
+                    </div>
+
+                    <hr style="border-color: var(--border-color); margin: 20px 0;">
+
+                    <h3 style="color: var(--accent-color); margin-top: 0; font-size: 1rem;">Elementos Libres
+                        (Notas/Media)</h3>
+                    <div class="form-group" style="display: flex; gap: 10px;">
+                        <select id="ce-type" style="flex: 1;">
+                            <option value="mediaUrl">Imagen/Gif/Video (URL)</option>
+                            <option value="noteLinear">Nota (Lineal)</option>
+                            <option value="noteList">Nota (Lista)</option>
+                            <option value="noteFootnote">Nota (Pie de página)</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <textarea id="ce-content" rows="3"
+                            placeholder="Inserta aquí la URL de la imagen/video o el texto de tu nota..."></textarea>
+                    </div>
+                    <button class="btn" style="width: 100%; font-size: 0.8rem;" onclick="addCustomElement()">+ Agregar
+                        al Canvas</button>
+
+                    <hr style="border-color: var(--border-color); margin: 20px 0;">
+
+                    <h3
+                        style="color: var(--accent-color); font-size: 1rem; display: flex; justify-content: space-between; align-items: center; margin-top: 0;">
+                        Stats
+                        <button class="btn" style="padding: 4px 8px; font-size: 0.7rem;" onclick="addStat()">+ Add
+                            Stat</button>
+                    </h3>
+                    <p style="font-size: 0.7rem; color: #888; margin-top: -5px;">Max value: 1000. Chart requires min 3
+                        stats.</p>
+
+                    <!-- Contenedor dinámico de Inputs de Stats -->
+                    <div id="stats-inputs-container">
+                        <!-- Generados por JavaScript -->
+                    </div>
+
+                </div> <!-- /ACORDEÓN CONTENIDO -->
+            </div>
+            <button class="panel-toggle-btn" onclick="togglePanel()" id="panel-toggle-btn">◀</button>
+
+            <!-- VISTA TIPO RPG (PREVIEW) -->
+            <div class="preview-area" id="preview-area">
+                <!-- Capa de Elementos Custom / Drag -->
+                <div id="canvas-layer"
+                    style="position: absolute; top:0; left:0; width:100%; height:100%; pointer-events: none; z-index: 50;">
+                </div>
+                <div class="character-col">
+                    <!-- Retrato y Nivel con Marco Metálico Animado (Añadimos clase del tier en JS) -->
+                    <div class="portrait tier-oro" id="portrait-container">
+                        <!-- El inner es para proteger la imagen de las animaciones del borde -->
+                        <div class="portrait-inner">
+                            <div class="level-badge">
+                                <div class="lvl-title">LEVEL: <span class="lvl-value" id="display-lvl">--</span></div>
+                            </div>
+                            <!-- Remover crossorigin para que carguen URLs de cualquier sitio. ColorThief ignorará si no hay CORS -->
+                            <img id="display-img" src="" alt="Personaje">
+                        </div>
+                    </div>
+
+                    <!-- XP/Stats en Barras -->
+                    <div class="stats-bars-container">
+                        <h3>Main Attributes</h3>
+                        <!-- Contenedor Dinámico para las Barras de Progreso -->
+                        <div id="stats-bars-wrapper">
+                            <!-- JS insertará el HTML -->
+                        </div>
+                    </div>
+                </div>
+
+                <div class="data-col">
+                    <!-- Gráfico Hexagonal (Radar) -->
+                    <div class="chart-box">
+                        <canvas id="rpgChart"></canvas>
+                    </div>
+
+                    <!-- Lore / Contexto -->
+                    <div class="lore-box">
+                        <h3 class="character-name" id="display-name">--</h3>
+                        <div class="character-context" id="display-context">
+                            --
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- ==================== LÓGICA JAVASCRIPT ==================== -->
+    <script>
+        // --- 1. ESTADO DE LA APLICACIÓN ---
+        let characters = [];
+        let currentEditingId = null;
+        let chartInstance = null;
+        let CHART_ACCENT_COLOR = '#9d00ff';
+        let colorThiefObj = null;
+
+        // --- CUSTOM ELEMENTS STATE ---
+        let activeDragElement = null;
+        let dragOffsetX = 0, dragOffsetY = 0;
+        const customResizeObserver = new ResizeObserver(entries => {
+            const char = getCurrentCharacter();
+            if (!char || !char.customElements) return;
+            for (let entry of entries) {
+                const ceId = entry.target.getAttribute('data-ceid');
+                const el = char.customElements.find(e => e.id === ceId);
+                if (el && !activeDragElement) { // Evitamos conflicto si se esta arrastrando
+                    el.w = entry.contentRect.width;
+                    el.h = entry.contentRect.height;
+                    saveToLocalStorage();
+                }
+            }
+        });
+
+        // Eventos Globales para Drag Drop Canvas
+        document.addEventListener('mousemove', (e) => {
+            if (!activeDragElement) return;
+            const previewArea = document.getElementById('preview-area');
+            const rect = previewArea.getBoundingClientRect();
+
+            let newX = e.clientX - rect.left - dragOffsetX + previewArea.scrollLeft;
+            let newY = e.clientY - rect.top - dragOffsetY + previewArea.scrollTop;
+
+            activeDragElement.style.left = newX + 'px';
+            activeDragElement.style.top = newY + 'px';
+        });
+
+        document.addEventListener('mouseup', () => {
+            if (activeDragElement) {
+                const ceId = activeDragElement.getAttribute('data-ceid');
+                const char = getCurrentCharacter();
+                if (char && char.customElements) {
+                    const el = char.customElements.find(e => e.id === ceId);
+                    if (el) {
+                        el.x = parseInt(activeDragElement.style.left) || 0;
+                        el.y = parseInt(activeDragElement.style.top) || 0;
+                        saveToLocalStorage();
+                    }
+                }
+                activeDragElement = null;
+                document.body.style.userSelect = ''; // Restaurar input text selection
+            }
+        });
+
+        const defaultStats = [
+            { id: _generateId(), name: 'Physical', value: 558 },
+            { id: _generateId(), name: 'Psyche', value: 381 },
+            { id: _generateId(), name: 'Intellect', value: 178 },
+            { id: _generateId(), name: 'Core', value: 450 },
+            { id: _generateId(), name: 'Agility', value: 620 },
+            { id: _generateId(), name: 'Defense', value: 300 }
+        ];
+
+        // --- 2. INICIALIZACIÓN ---
+        function togglePanel() {
+            const panel = document.getElementById('editor-panel');
+            const btn = document.getElementById('panel-toggle-btn');
+            panel.classList.toggle('collapsed');
+            if(panel.classList.contains('collapsed')) {
+                btn.textContent = '▶';
+            } else {
+                btn.textContent = '◀';
+            }
+        }
+
+        window.addEventListener('DOMContentLoaded', () => {
+            loadFromLocalStorage();
+
+            if (characters.length === 0) {
+                characters.push({
+                    id: _generateId(),
+                    name: 'SYLUS',
+                    imageUrl: 'https://images.unsplash.com/photo-1542751371-adc38448a05e?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80',
+                    imageLocal: '',
+                    image: 'https://images.unsplash.com/photo-1542751371-adc38448a05e?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80',
+                    level: 22,
+                    tier: 'Oro',
+                    accentColor: '#9d00ff',
+                    context: 'Un líder misterioso que opera en las sombras. Conocido por su mente estratégica y determinación inquebrantable.',
+                    stats: JSON.parse(JSON.stringify(defaultStats))
+                });
+                saveToLocalStorage();
+            }
+
+            renderMenu();
+            initColorThief();
+            setupDragAndDrop();
+        });
+
+        // --- 3. UTILIDADES ---
+        function _generateId() { return Math.random().toString(36).substr(2, 9); }
+
+        function loadFromLocalStorage() {
+            const data = localStorage.getItem('rpgCharactersData');
+            if (data) {
+                try {
+                    characters = JSON.parse(data);
+                } catch (e) { console.error("Data error"); }
+            }
+        }
+
+        function saveToLocalStorage() {
+            localStorage.setItem('rpgCharactersData', JSON.stringify(characters));
+        }
+
+        function getCurrentCharacter() {
+            return characters.find(c => c.id === currentEditingId);
+        }
+
+        // --- 4. DECORACIONES INMERSIVAS (Partículas) ---
+        function createParticles() {
+            const container = document.getElementById('particles-container');
+            if (container.children.length > 0) return; // Solo crearlas una vez
+
+            for (let i = 0; i < 35; i++) {
+                const p = document.createElement('div');
+                p.className = 'particle';
+                const size = Math.random() * 4 + 2; // 2 to 6px
+                p.style.width = size + 'px';
+                p.style.height = size + 'px';
+                p.style.left = Math.random() * 100 + 'vw';
+                p.style.animationDuration = (Math.random() * 10 + 10) + 's'; // 10 to 20s
+                p.style.animationDelay = (Math.random() * 10) + 's';
+                container.appendChild(p);
+            }
+        }
+
+        // --- 5. LÓGICA DE IMÁGENES Y DRAG & DROP ---
+        function handleImageUrl(url) {
+            const char = getCurrentCharacter();
+            if (char) {
+                char.imageUrl = url;
+                updateDefinitiveImage(char);
+            }
+        }
+
+        function handleLocalImage(input) {
+            if (input.files && input.files[0]) {
+                processLocalFile(input.files[0]);
+            } else {
+                const char = getCurrentCharacter();
+                if (char) {
+                    char.imageLocal = '';
+                    updateDefinitiveImage(char);
+                }
+            }
+        }
+
+        function processLocalFile(file) {
+            if (!file.type.startsWith('image/')) return;
+            if (file.size > 2 * 1024 * 1024) { // límite de 2MB
+                alert("La imagen es demasiado grande. El límite es de 2MB.");
+                return;
+            }
+            const reader = new FileReader();
+            reader.onload = function (event) {
+                const base64 = event.target.result;
+                const char = getCurrentCharacter();
+                if (char) {
+                    char.imageLocal = base64;
+                    updateDefinitiveImage(char);
+                }
+            }
+            reader.readAsDataURL(file);
+        }
+
+        function updateDefinitiveImage(char) {
+            // "if" lógico: Prioridad la local, si no, la URL
+            if (char.imageLocal && char.imageLocal.trim() !== '') {
+                char.image = char.imageLocal;
+            } else if (char.imageUrl && char.imageUrl.trim() !== '') {
+                char.image = char.imageUrl;
+            } else {
+                char.image = '';
+            }
+            saveToLocalStorage();
+            updatePreviewBasics();
+        }
+
+        function setupDragAndDrop() {
+            const dropZones = [document.getElementById('portrait-container'), document.getElementById('local-drop-zone')];
+
+            dropZones.forEach(dropZone => {
+                if (!dropZone) return;
+
+                ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+                    dropZone.addEventListener(eventName, preventDefaults, false);
+                });
+                function preventDefaults(e) { e.preventDefault(); e.stopPropagation(); }
+
+                ['dragenter', 'dragover'].forEach(eventName => {
+                    dropZone.addEventListener(eventName, () => dropZone.classList.add('drag-over'), false);
+                });
+
+                ['dragleave', 'drop'].forEach(eventName => {
+                    dropZone.addEventListener(eventName, () => dropZone.classList.remove('drag-over'), false);
+                });
+
+                dropZone.addEventListener('drop', (e) => {
+                    let dt = e.dataTransfer;
+                    let files = dt.files;
+                    if (files && files[0]) {
+                        processLocalFile(files[0]);
+                    }
+                });
+            });
+        }
+
+        function forceColorDetection() {
+            const char = getCurrentCharacter();
+            if (!char) return;
+            char.autoColorDisabled = false;
+            const imgEl = document.getElementById('display-img');
+            if (imgEl.complete && colorThiefObj) {
+                try {
+                    const rgb = colorThiefObj.getColor(imgEl);
+                    if (rgb) {
+                        const hex = rgbToHex(rgb[0], rgb[1], rgb[2]);
+                        updateThemeColor(hex, true, false); // No es manual
+                    }
+                } catch(e) { console.warn("ColorThief failed", e); }
+            }
+        }
+
+        function initColorThief() {
+            colorThiefObj = new ColorThief();
+            const imgEl = document.getElementById('display-img');
+
+            imgEl.addEventListener('load', function () {
+                const char = getCurrentCharacter();
+                if (char && char.autoColorDisabled) return;
+
+                try {
+                    const rgb = colorThiefObj.getColor(imgEl);
+                    if (rgb) {
+                        const hex = rgbToHex(rgb[0], rgb[1], rgb[2]);
+                        updateThemeColor(hex, true, false); // false = auto flag
+                    }
+                } catch (e) {
+                    // Silencio intencional: URLs sin CORS fallarán en ColorThief pero la imagen sí se verá
+                }
+            });
+        }
+
+        function rgbToHex(r, g, b) {
+            return "#" + (1 << 24 | r << 16 | g << 8 | b).toString(16).slice(1);
+        }
+
+        // --- 6. CONTROLADOR DEL MENÚ ---
+        function renderMenu() {
+            const grid = document.getElementById('characters-grid');
+            grid.innerHTML = '';
+
+            characters.forEach(char => {
+                const card = document.createElement('div');
+                card.className = 'char-card';
+                card.onclick = () => openEditor(char.id);
+
+                // Determinar borde visual en el menú según tier (opcional, pero se ve bonito)
+                card.style.borderColor = char.accentColor || 'var(--border-color)';
+
+                card.innerHTML = `
+                    <button class="delete-char-btn" onclick="deleteCharacter('${char.id}', event)" title="Delete Character">✖</button>
+                    <img class="char-card-img" src="${char.image || 'https://via.placeholder.com/300x400?text=No+Image'}" alt="${char.name}">
+                    <div class="char-card-info">
+                        <h3 class="char-card-name" style="color:${char.accentColor || 'var(--accent-color)'}">${char.name || 'Unnamed'}</h3>
+                        <div class="char-card-lvl">Level: ${char.level} | Tier: ${char.tier || 'Acero'}</div>
+                    </div>
+                `;
+                grid.appendChild(card);
+            });
+        }
+
+        function createNewCharacter() {
+            const newChar = {
+                id: _generateId(),
+                name: 'New Hero',
+                imageUrl: 'https://images.unsplash.com/photo-1560613867-27083049b187?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80',
+                imageLocal: '',
+                image: 'https://images.unsplash.com/photo-1560613867-27083049b187?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80',
+                level: 1,
+                tier: 'Plata',
+                accentColor: '#9d00ff',
+                context: 'A humble beginner ready to explore the unknown.',
+                stats: JSON.parse(JSON.stringify(defaultStats))
+            };
+            characters.push(newChar);
+            saveToLocalStorage();
+            openEditor(newChar.id);
+            renderMenu();
+        }
+
+        function deleteCharacter(id, event) {
+            event.stopPropagation();
+            if (confirm('Are you sure you want to delete this character?')) {
+                characters = characters.filter(c => c.id !== id);
+                saveToLocalStorage();
+                renderMenu();
+            }
+        }
+
+        // --- 7. CONTROL TRANSICIONES ---
+        function openEditor(id) {
+            currentEditingId = id;
+
+            // Efecto de deslizamiento in
+            document.getElementById('menu-view').classList.add('hidden');
+            document.getElementById('editor-view').classList.add('active');
+
+            createParticles();
+
+            const char = getCurrentCharacter();
+
+            // Llenar datos en UI
+            document.getElementById('input-img-url').value = char.imageUrl || '';
+            document.getElementById('input-img-local').value = null; // Reiniciar visualmente el local
+            document.getElementById('input-name').value = char.name || '';
+            document.getElementById('input-lvl').value = char.level || 1;
+            document.getElementById('input-tier').value = char.tier || 'Acero';
+            document.getElementById('input-context').value = char.context || '';
+
+            const colorToApply = char.accentColor || '#9d00ff';
+            document.getElementById('input-color').value = colorToApply;
+            updateThemeColor(colorToApply, false); // false para no resguardar aún
+
+            updateTierClass(char.tier || 'Acero');
+
+            initChart();
+            updateEditorUI();
+
+            if (!char.customElements) char.customElements = [];
+            renderCustomElements();
+        }
+
+        function saveAndExit() {
+            saveToLocalStorage();
+
+            // Efecto de deslizamiento out
+            document.getElementById('editor-view').classList.remove('active');
+            setTimeout(() => {
+                document.getElementById('menu-view').classList.remove('hidden');
+                renderMenu();
+            }, 500); // 500ms al mismo tiempo que dura el CSS transition
+        }
+
+        // --- 8. LOGICA DE EDICIÓN Y FORMATO DE TARJETA ---
+        function updateCurrentCharacter(field, value) {
+            const char = getCurrentCharacter();
+            if (char) {
+                char[field] = value;
+                updatePreviewBasics();
+                saveToLocalStorage();
+            }
+        }
+
+        function toggleAccordion(contentId, headerElement) {
+            const content = document.getElementById(contentId);
+
+            // Toggle de las clases 'collapsed'
+            content.classList.toggle('collapsed');
+            headerElement.classList.toggle('collapsed');
+        }
+
+        function toggleFocusMode() {
+            document.getElementById('editor-view').classList.toggle('focus-mode');
+        }
+
+        // --- Custom Canvas Elements (Notas & Media) ---
+        function addCustomElement() {
+            const type = document.getElementById('ce-type').value;
+            const content = document.getElementById('ce-content').value.trim();
+            if (!content) return;
+
+            const char = getCurrentCharacter();
+            if (!char.customElements) char.customElements = [];
+
+            char.customElements.push({
+                id: _generateId(),
+                type: type,
+                content: content,
+                x: 100, // deafult pos
+                y: 100,
+                w: type === 'mediaUrl' ? 560 : 200,
+                h: type === 'mediaUrl' ? 315 : 180
+            });
+            saveToLocalStorage();
+            document.getElementById('ce-content').value = '';
+            renderCustomElements();
+        }
+
+        function deleteCustomElement(id) {
+            const char = getCurrentCharacter();
+            if (char && char.customElements) {
+                char.customElements = char.customElements.filter(e => e.id !== id);
+                saveToLocalStorage();
+                renderCustomElements();
+            }
+        }
+
+        function startDragCustomElement(e, element) {
+            activeDragElement = element;
+            const rectEl = element.getBoundingClientRect();
+
+            dragOffsetX = e.clientX - rectEl.left;
+            dragOffsetY = e.clientY - rectEl.top;
+
+            document.body.style.userSelect = 'none'; // Evitar seleccionar texto en toda la pagina accidentalmente
+            e.preventDefault();
+        }
+
+        function renderCustomElements() {
+            const container = document.getElementById('canvas-layer');
+            container.innerHTML = '';
+            const char = getCurrentCharacter();
+            if (!char || !char.customElements) return;
+
+            char.customElements.forEach(ce => {
+                const el = document.createElement('div');
+                let extraClass = '';
+                if (ce.type !== 'mediaUrl') extraClass = ce.type;
+                el.className = 'custom-element ' + extraClass;
+
+                el.style.left = ce.x + 'px';
+                el.style.top = ce.y + 'px';
+                if (ce.w) el.style.width = ce.w + 'px';
+                if (ce.h) el.style.height = ce.h + 'px';
+                el.setAttribute('data-ceid', ce.id);
+                el.style.pointerEvents = 'auto'; // Permitir resize y drag desde wrapper
+
+                let innerContent = '';
+                if (ce.type === 'mediaUrl') {
+                    if (ce.content.includes('youtube.com') || ce.content.includes('youtu.be')) {
+                        let finalSrc = ce.content.trim();
+                        // Si el usuario pega el código iframe completo, extraemos el src
+                        const srcMatch = finalSrc.match(/src=["']([^"']+)["']/);
+                        if (srcMatch) finalSrc = srcMatch[1];
+                        
+                        // TamperMonkey Script Logic: Aggressively convert to nocookie domain to bypass Error 153
+                        if (finalSrc.includes('youtube.com/watch?v=')) {
+                            finalSrc = finalSrc.replace('youtube.com/watch?v=', 'youtube-nocookie.com/embed/');
+                        } else if (finalSrc.includes('youtu.be/')) {
+                            finalSrc = finalSrc.replace('youtu.be/', 'www.youtube-nocookie.com/embed/');
+                        } else if (finalSrc.includes('youtube.com/embed/')) {
+                            finalSrc = finalSrc.replace('youtube.com/embed/', 'youtube-nocookie.com/embed/');
+                        }
+
+                        // Estructura idéntica a la solicitada, pero con width="100%" y height="100%" 
+                        // para que el iframe llene el contenedor `.custom-element` que ya se inicializa a 560x315 px (35em x 19.68em).
+                        innerContent = `<iframe width="100%" height="100%" src="${finalSrc}" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen style="pointer-events: auto;"></iframe>`;
+                    } else if (ce.content.match(/\.(mp4|webm|ogg)$/i)) {
+                        innerContent = `<video src="${ce.content}" loop autoplay muted playsinline></video>`;
+                    } else {
+                        innerContent = `<img src="${ce.content}">`;
+                    }
+                } else if (ce.type === 'noteList') {
+                    const lis = ce.content.split('\n').map(l => l.trim() ? `<li>${l}</li>` : '').join('');
+                    innerContent = `<ul>${lis}</ul>`;
+                } else if (ce.type === 'noteFootnote') {
+                    innerContent = `<i>* ${ce.content.replace(/\n/g, '<br>')}</i>`;
+                } else {
+                    innerContent = `<p>${ce.content.replace(/\n/g, '<br>')}</p>`;
+                }
+
+                el.innerHTML = `
+                    <div class="ce-drag-handle" onmousedown="startDragCustomElement(event, this.parentNode)">☰ Mover</div>
+                    <button class="ce-delete-btn" onclick="deleteCustomElement('${ce.id}')">✖</button>
+                    ${innerContent}
+                `;
+
+                container.appendChild(el);
+                customResizeObserver.observe(el);
+            });
+        }
+
+        function updateTierSelection(tierValue) {
+            updateCurrentCharacter('tier', tierValue);
+            updateTierClass(tierValue);
+        }
+
+        function updateTierClass(tierName) {
+            const portrait = document.getElementById('portrait-container');
+            // Removemos clases tier- antiguas
+            portrait.className = 'portrait';
+
+            const validTiers = {
+                'acero': 'tier-acero',
+                'bronce': 'tier-bronce',
+                'plata': 'tier-plata',
+                'oro': 'tier-oro',
+                'diamante': 'tier-diamante',
+                'mitico': 'tier-mitico'
+            };
+            const key = tierName.toLowerCase();
+            if (validTiers[key]) {
+                portrait.classList.add(validTiers[key]);
+            } else {
+                portrait.classList.add('tier-acero'); // Fallback
+            }
+        }
+
+        function updateThemeColor(hexColor, shouldSave = true, isManual = false) {
+            if(isManual) {
+                const char = getCurrentCharacter();
+                if(char) char.autoColorDisabled = true;
+            }
+            document.documentElement.style.setProperty('--accent-color', hexColor);
+            CHART_ACCENT_COLOR = hexColor;
+            document.getElementById('input-color').value = hexColor;
+
+            if (chartInstance && chartInstance.data.datasets[0]) {
+                // Actualizar color interno del chart de forma instantanea
+                chartInstance.data.datasets[0].borderColor = hexColor;
+                chartInstance.data.datasets[0].pointBackgroundColor = hexColor;
+                chartInstance.data.datasets[0].backgroundColor = hexColor + '25'; // Alpha via string concat
+                chartInstance.options.plugins.tooltip.titleColor = hexColor;
+                chartInstance.options.plugins.tooltip.borderColor = hexColor;
+                chartInstance.update('none');
+            }
+
+            if (shouldSave) {
+                const char = getCurrentCharacter();
+                if (char) {
+                    char.accentColor = hexColor;
+                    saveToLocalStorage();
+                }
+            }
+        }
+
+        function updatePreviewBasics() {
+            const char = getCurrentCharacter();
+            if (!char) return;
+            document.getElementById('display-img').src = char.image || 'https://via.placeholder.com/400x600?text=No+Image';
+            document.getElementById('display-name').textContent = char.name.toUpperCase() + '_';
+            document.getElementById('display-lvl').textContent = char.level;
+            document.getElementById('display-context').textContent = char.context;
+        }
+
+        function addStat() {
+            const char = getCurrentCharacter();
+            char.stats.push({ id: _generateId(), name: 'New Stat', value: 100 });
+            saveToLocalStorage();
+            updateEditorUI();
+        }
+
+        function removeStat(statId) {
+            const char = getCurrentCharacter();
+            if (char.stats.length <= 3) {
+                alert("Minimum 3 stats required to maintain the radar chart shape.");
+                return;
+            }
+            char.stats = char.stats.filter(s => s.id !== statId);
+            saveToLocalStorage();
+            updateEditorUI();
+        }
+
+        function updateStat(statId, field, propValue) {
+            const char = getCurrentCharacter();
+            const stat = char.stats.find(s => s.id === statId);
+            if (stat) {
+                if (field === 'value') {
+                    propValue = Math.min(Math.max(parseInt(propValue) || 0, 0), 1000);
+                }
+                stat[field] = propValue;
+                updateStatsPreviewOnly();
+                saveToLocalStorage();
+            }
+        }
+
+        function updateEditorUI() {
+            updatePreviewBasics();
+            const char = getCurrentCharacter();
+            const container = document.getElementById('stats-inputs-container');
+            container.innerHTML = '';
+
+            char.stats.forEach(stat => {
+                const row = document.createElement('div');
+                row.className = 'stat-edit-row';
+
+                row.innerHTML = `
+                    <input type="text" placeholder="Stat Name" value="${stat.name}" 
+                           oninput="updateStat('${stat.id}', 'name', this.value)">
+                    <input type="number" placeholder="Value" value="${stat.value}" max="1000" min="0" 
+                           oninput="updateStat('${stat.id}', 'value', this.value)">
+                    <button class="stat-delete-btn" onclick="removeStat('${stat.id}')" title="Remove Stat">✖</button>
+                `;
+                container.appendChild(row);
+            });
+
+            updateStatsPreviewOnly();
+        }
+
+        function updateStatsPreviewOnly() {
+            const char = getCurrentCharacter();
+
+            const barsWrapper = document.getElementById('stats-bars-wrapper');
+            barsWrapper.innerHTML = '';
+
+            // Tomamos los 3 atributos más fuertes
+            const topStats = [...char.stats].sort((a, b) => b.value - a.value).slice(0, 3);
+            topStats.forEach(stat => {
+                const percent = Math.min((stat.value / 1000) * 100, 100);
+                barsWrapper.innerHTML += `
+                    <div class="stat-bar-row">
+                        <div class="stat-bar-header">
+                            <span>${stat.name}</span>
+                            <span class="stat-bar-value">${stat.value}</span>
+                        </div>
+                        <div class="stat-bar-bg">
+                            <div class="stat-bar-fill" style="width: ${percent}%; background-color: var(--accent-color); box-shadow: 0 0 8px var(--accent-color);"></div>
+                        </div>
+                    </div>
+                `;
+            });
+
+            if (chartInstance) {
+                const labels = char.stats.map(s => s.name);
+                const dataValues = char.stats.map(s => s.value);
+                chartInstance.data.labels = labels;
+                chartInstance.data.datasets[0].data = dataValues;
+                chartInstance.update('none');
+            }
+        }
+
+        // --- 9. CHART.JS ---
+        function initChart() {
+            const ctx = document.getElementById('rpgChart').getContext('2d');
+
+            if (chartInstance) {
+                chartInstance.destroy();
+            }
+
+            chartInstance = new Chart(ctx, {
+                type: 'radar',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        label: 'Stats',
+                        data: [],
+                        backgroundColor: CHART_ACCENT_COLOR + '25',
+                        borderColor: CHART_ACCENT_COLOR,
+                        pointBackgroundColor: CHART_ACCENT_COLOR,
+                        pointBorderColor: '#fff',
+                        pointHoverBackgroundColor: '#fff',
+                        pointHoverBorderColor: CHART_ACCENT_COLOR,
+                        borderWidth: 2,
+                        pointRadius: 4,
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        r: {
+                            angleLines: { color: 'rgba(128, 128, 128, 0.2)' },
+                            grid: { color: 'rgba(128, 128, 128, 0.2)' },
+                            pointLabels: {
+                                color: 'rgba(128, 128, 128, 0.8)',
+                                font: { size: 12, family: 'sans-serif' }
+                            },
+                            ticks: { display: false, stepSize: 200, max: 1000, min: 0 }
+                        }
+                    },
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            backgroundColor: 'rgba(0,0,0,0.8)',
+                            titleColor: CHART_ACCENT_COLOR,
+                            bodyColor: '#fff',
+                            borderColor: CHART_ACCENT_COLOR,
+                            borderWidth: 1
+                        }
+                    }
+                }
+            });
+        }
+    </script>
+</body>
+
+</html>
