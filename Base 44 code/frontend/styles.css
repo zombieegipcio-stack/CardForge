@@ -1,3 +1,27 @@
+/* FirebaseUI Layout Fix */
+#firebaseui-auth-container .firebaseui-container {
+    box-shadow: none !important;
+    background: transparent !important;
+    max-width: none !important;
+    margin: 0 !important;
+}
+
+#firebaseui-auth-container .firebaseui-card-content {
+    padding: 0 !important;
+}
+
+#firebaseui-auth-container .firebaseui-idp-button {
+    max-height: 32px !important;
+    min-height: 32px !important;
+    padding: 0 10px !important;
+    font-size: 13px !important;
+    margin: 0 !important;
+}
+
+#firebaseui-auth-container .firebaseui-idp-google {
+    width: auto !important;
+}
+
 :root {
     --bg-color: #0d0f12;
     --panel-bg: #161a20;
@@ -21,7 +45,7 @@ body {
 }
 
 /* --- VISTA MENÚ PRINCIPAL --- */
-#menu-view {
+#home-view {
     padding: 40px;
     overflow-y: auto;
     flex: 1;
@@ -32,23 +56,23 @@ body {
     box-sizing: border-box;
 }
 
-#menu-view.hidden {
+#home-view.hidden {
     transform: translateX(-50px);
     opacity: 0;
     pointer-events: none;
-    position: absolute; /* Para que deje de ocupar espacio estructural normal si fuera necesario, aunque como editor-view es absolute, esto basta */
+    position: absolute;
 }
 
-#menu-view header {
+#home-view header {
     display: flex;
     justify-content: space-between;
     align-items: center;
     border-bottom: 2px solid var(--border-color);
-    padding-bottom: 20px;
+    padding: 0 0 20px 0;
     margin-bottom: 30px;
 }
 
-#menu-view h1 {
+#home-view h1 {
     color: var(--accent-color);
     margin: 0;
     font-size: 2rem;
@@ -72,6 +96,44 @@ body {
 .btn:hover {
     border-color: var(--accent-color);
     color: var(--accent-color);
+}
+
+.btn-small {
+    padding: 5px 10px;
+    font-size: 0.7rem;
+}
+
+.btn-google {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: #fff;
+    color: #757575;
+    border: 1px solid #ddd;
+    text-transform: none;
+    font-family: 'Roboto', sans-serif;
+}
+
+.btn-google:hover {
+    background: #f1f1f1;
+    border-color: #bbb;
+    color: #757575;
+}
+
+.btn-premium {
+    background: linear-gradient(45deg, #ffd700, #ff8c00);
+    color: #000;
+    border: none;
+    width: 100%;
+    margin-top: 15px;
+    box-shadow: 0 0 15px rgba(255, 140, 0, 0.4);
+}
+
+.btn-premium:hover {
+    background: linear-gradient(45deg, #ffec8b, #ffae42);
+    box-shadow: 0 0 25px rgba(255, 140, 0, 0.7);
+    color: #000;
+    transform: scale(1.02);
 }
 
 .characters-grid {
@@ -169,20 +231,6 @@ body {
     pointer-events: auto;
 }
 
-/* --- CLASE FOCUS MODE --- */
-#editor-view.focus-mode .editor-panel {
-    display: none;
-}
-
-#editor-view.focus-mode .preview-area {
-    padding: 20px; /* Expande para aprovechar todo */
-}
-
-#editor-view.focus-mode .editor-header {
-    background: transparent;
-    border-bottom: none;
-    box-shadow: none;
-}
 
 /* Viñeta para inmersión */
 .vignette {
@@ -192,6 +240,108 @@ body {
     pointer-events: none;
     z-index: 1;
 }
+
+
+/* --- ESTILOS DE NOTAS MEJORADOS --- */
+.custom-element {
+    background: rgba(13, 15, 18, 0.4);
+    backdrop-filter: blur(8px);
+    border: 1px solid rgba(255,255,255,0.05);
+    border-radius: 8px;
+    padding: 10px;
+    transition: box-shadow 0.3s ease;
+}
+
+.custom-element:hover {
+    box-shadow: 0 0 15px rgba(var(--accent-color-rgb, 157, 0, 255), 0.1);
+    border-color: rgba(var(--accent-color-rgb, 157, 0, 255), 0.2);
+}
+
+.checklist-container {
+    list-style: none !important;
+    padding: 0;
+    margin: 0;
+}
+
+.checklist-container li::marker {
+    display: none !important;
+    content: none !important;
+}
+
+.checklist-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 8px;
+    font-size: 0.95rem;
+    color: var(--text-muted);
+}
+
+/* Custom Checkbox Style */
+.checklist-box-label {
+    position: relative;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+}
+
+.checklist-box-label input {
+    position: absolute;
+    opacity: 0;
+    cursor: pointer;
+    height: 0; width: 0;
+}
+
+.custom-checkbox-visual {
+    height: 18px;
+    width: 18px;
+    background-color: rgba(255,255,255,0.05);
+    border: 1px solid var(--accent-color);
+    border-radius: 4px;
+    transition: all 0.2s;
+}
+
+.checklist-box-label:hover input ~ .custom-checkbox-visual {
+    background-color: rgba(var(--accent-color-rgb), 0.1);
+}
+
+.checklist-box-label input:checked ~ .custom-checkbox-visual {
+    background-color: var(--accent-color);
+}
+
+.custom-checkbox-visual:after {
+    content: "";
+    position: absolute;
+    display: none;
+    left: 6px;
+    top: 2px;
+    width: 5px;
+    height: 10px;
+    border: solid white;
+    border-width: 0 2px 2px 0;
+    transform: rotate(45deg);
+}
+
+.checklist-box-label input:checked ~ .custom-checkbox-visual:after {
+    display: block;
+}
+
+.checklist-item span[contenteditable="true"]:hover {
+    background: rgba(255,255,255,0.05);
+}
+
+.linear-note-content {
+    font-size: 0.95rem;
+    line-height: 1.5;
+    color: #eee;
+    outline: none;
+    padding: 0;
+    margin: 0;
+    background: none;
+    backdrop-filter: none;
+    border: none;
+}
+
 
 /* Contenedor de partículas flotantes */
 .particles-container {
@@ -871,5 +1021,152 @@ canvas {
     }
     .char-card-img {
         height: 20em;
+    }
+
+    /* En mobile el panel flota debajo del editor-header, no desde top:0 */
+    .editor-panel {
+        /* editor-header mide ~58px aprox; usamos una variable estimada */
+        top: auto;
+        bottom: 0;
+        height: calc(100% - 58px); /* Deja el header visible */
+        width: 100%;
+        border-right: none;
+        border-top: 2px solid var(--border-color);
+        transform: translateY(0);
+        transition: transform 0.3s ease;
+        /* Cuando está colapsado, desliza hacia abajo fuera de la pantalla */
+    }
+
+    .editor-panel.collapsed {
+        transform: translateY(100%);
+    }
+
+    /* Botón toggle en mobile: Flotantes y con alto z-index */
+    .panel-toggle-btn {
+        left: auto;
+        right: 1.25em; /* 20px */
+        top: auto;
+        bottom: 1.25em;
+        transform: none;
+        border-radius: 50%;
+        width: 3.125em; /* 50px */
+        height: 3.125em;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border: 2px solid var(--accent-color);
+        background: var(--panel-bg);
+        box-shadow: 0 0 15px rgba(0,0,0,0.5);
+        z-index: 1000; /* Siempre encima de todo */
+        font-size: 1.2rem;
+        transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+
+    .editor-panel.collapsed + .panel-toggle-btn {
+        bottom: 1.25em;
+        background: var(--accent-color);
+        color: #fff;
+        box-shadow: 0 0 20px var(--accent-color);
+    }
+
+    /* Header del menú en mobile más compacto */
+    .editor-header {
+        flex-wrap: wrap;
+        gap: 8px;
+        padding: 10px 15px;
+    }
+
+    .editor-header span {
+        display: none; /* Ocultar el texto "Auto-saving" en mobile para ahorrar espacio */
+    }
+}
+/* --- SECCIÓN MONETIZACIÓN (COMENTADA) --- 
+.monetization-section {
+    margin-top: 60px;
+    display: flex;
+    justify-content: center;
+    padding-bottom: 40px;
+}
+
+.premium-card {
+    background: var(--panel-bg);
+    border: 1px solid var(--accent-color);
+    border-radius: 12px;
+    padding: 30px;
+    max-width: 400px;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 0 20px rgba(157, 0, 255, 0.15);
+}
+
+.premium-card::before {
+    content: "";
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: radial-gradient(circle, rgba(157, 0, 255, 0.1) 0%, transparent 70%);
+    pointer-events: none;
+}
+
+.premium-badge {
+    background: var(--accent-color);
+    color: #fff;
+    font-size: 0.7rem;
+    font-weight: bold;
+    padding: 4px 12px;
+    border-radius: 20px;
+    display: inline-block;
+    margin-bottom: 15px;
+}
+
+.premium-card h3 {
+    margin: 0 0 10px 0;
+    color: #fff;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.premium-card p {
+    color: var(--text-muted);
+    font-size: 0.9rem;
+    line-height: 1.4;
+    margin-bottom: 20px;
+}
+
+.premium-price {
+    font-size: 1.5rem;
+    font-weight: bold;
+    color: #fff;
+}
+
+.premium-price small {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    font-weight: normal;
+}
+*/
+
+@media (max-width: 600px) {
+    #menu-view header {
+        flex-direction: column;
+        gap: 20px;
+        align-items: flex-start;
+    }
+    
+    #auth-container {
+        width: 100%;
+    }
+    
+    .btn-google {
+        width: 100%;
+        justify-content: center;
+    }
+    
+    #user-info {
+        width: 100%;
+        justify-content: space-between;
     }
 }
